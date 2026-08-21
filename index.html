@@ -417,10 +417,17 @@
 const DRIVE_CLIENT_ID = '920590130909-a0isao1q2fnm23l5il6m2flm53oh7r5h.apps.googleusercontent.com';
 const DRIVE_FOLDER_ID = '1GhSCCN7q7CAwZ2IYYdrOwEc5HFcy-_gi';
 
+// Email yang otomatis diberi akses (editor) ke folder Drive di atas.
+const DRIVE_SHARE_EMAILS = [
+  'ariniaf.office@gmail.com',
+  'Zupazudiamond@gmail.com'
+];
+
 let driveAccessToken = null;
 let gambarUrlTersimpan = '';
 let gambarNamaTersimpan = '';
 let tokenClient = null;
+let folderShared = false; // supaya tidak share berulang kali di sesi yang sama
 
 const gambarFileInput = document.getElementById('gambarFile');
 const btnHubungDrive = document.getElementById('btnHubungDrive');
@@ -444,11 +451,42 @@ function getTokenClient(){
         driveAccessToken = resp.access_token;
         btnHubungDrive.style.display = 'none';
         btnPilihGambar.style.display = 'inline-flex';
-        uploadStatusEl.textContent = 'Terhubung ke Google Drive. Silakan pilih gambar.';
+        uploadStatusEl.textContent = 'Terhubung ke Google Drive. Menyiapkan akses folder...';
+        bagikanFolderKeTim();
       }
     });
   }
   return tokenClient;
+}
+
+// Memberi akses folder Drive ke email tim (dipanggil sekali per sesi setelah login).
+function bagikanFolderKeTim(){
+  if(folderShared || !driveAccessToken){
+    uploadStatusEl.textContent = 'Terhubung ke Google Drive. Silakan pilih gambar.';
+    return;
+  }
+
+  const permintaan = DRIVE_SHARE_EMAILS.map(email =>
+    fetch(`https://www.googleapis.com/drive/v3/files/${DRIVE_FOLDER_ID}/permissions?sendNotificationEmail=false`, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + driveAccessToken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ role: 'writer', type: 'user', emailAddress: email })
+    }).then(r => ({ email, ok: r.ok }))
+      .catch(() => ({ email, ok: false }))
+  );
+
+  Promise.all(permintaan).then(hasil => {
+    folderShared = true;
+    const gagal = hasil.filter(h => !h.ok).map(h => h.email);
+    if(gagal.length){
+      uploadStatusEl.textContent = 'Terhubung. Gagal memberi akses ke: ' + gagal.join(', ') + '. Silakan pilih gambar.';
+    } else {
+      uploadStatusEl.textContent = 'Terhubung ke Google Drive. Akses folder sudah diberikan ke tim. Silakan pilih gambar.';
+    }
+  });
 }
 
 btnHubungDrive.addEventListener('click', () => {

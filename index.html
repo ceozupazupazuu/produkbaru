@@ -293,7 +293,8 @@
     <div class="section">
       <div class="field">
         <input type="file" id="gambarFile" accept="image/*" style="display:none;">
-        <button type="button" class="upload-link" id="btnPilihGambar" style="border:none;cursor:pointer;">Pilih & upload gambar ke Drive →</button>
+        <button type="button" class="upload-link" id="btnHubungDrive" style="border:none;cursor:pointer;">Hubungkan Google Drive →</button>
+        <button type="button" class="upload-link" id="btnPilihGambar" style="border:none;cursor:pointer;display:none;">Pilih & upload gambar ke Drive →</button>
         <p class="hint" id="uploadStatus"></p>
       </div>
     </div>
@@ -415,6 +416,7 @@ let gambarNamaTersimpan = '';
 let tokenClient = null;
 
 const gambarFileInput = document.getElementById('gambarFile');
+const btnHubungDrive = document.getElementById('btnHubungDrive');
 const btnPilihGambar = document.getElementById('btnPilihGambar');
 const uploadStatusEl = document.getElementById('uploadStatus');
 
@@ -433,23 +435,25 @@ function getTokenClient(){
           return;
         }
         driveAccessToken = resp.access_token;
-        lakukanUpload();
+        btnHubungDrive.style.display = 'none';
+        btnPilihGambar.style.display = 'inline-flex';
+        uploadStatusEl.textContent = 'Terhubung ke Google Drive. Silakan pilih gambar.';
       }
     });
   }
   return tokenClient;
 }
 
+btnHubungDrive.addEventListener('click', () => {
+  const client = getTokenClient();
+  if(client) client.requestAccessToken();
+});
+
 btnPilihGambar.addEventListener('click', () => gambarFileInput.click());
 
 gambarFileInput.addEventListener('change', () => {
   if(!gambarFileInput.files.length) return;
-  if(driveAccessToken){
-    lakukanUpload();
-  } else {
-    const client = getTokenClient();
-    if(client) client.requestAccessToken();
-  }
+  lakukanUpload();
 });
 
 function lakukanUpload(){
@@ -470,6 +474,12 @@ function lakukanUpload(){
     body: form
   })
   .then(r => {
+    if(r.status === 401){
+      driveAccessToken = null;
+      btnPilihGambar.style.display = 'none';
+      btnHubungDrive.style.display = 'inline-flex';
+      throw new Error('Sesi Drive habis, klik "Hubungkan Google Drive" lagi');
+    }
     if(!r.ok) throw new Error('HTTP ' + r.status);
     return r.json();
   })
@@ -707,7 +717,7 @@ submitBtn.addEventListener('click', ()=>{
   gambarFileInput.value = '';
   gambarUrlTersimpan = '';
   gambarNamaTersimpan = '';
-  uploadStatusEl.textContent = '';
+  uploadStatusEl.textContent = driveAccessToken ? '' : '';
 });
 
 renderList();

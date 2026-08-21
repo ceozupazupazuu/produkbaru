@@ -480,7 +480,7 @@ function lakukanUpload(){
   .then(data => {
     gambarUrlTersimpan = data.webViewLink || ('https://drive.google.com/file/d/' + data.id + '/view');
     gambarNamaTersimpan = file.name;
-    uploadStatusEl.innerHTML = 'Terupload: <a href="' + gambarUrlTersimpan + '" target="_blank" rel="noopener">' + file.name + '</a>';
+    uploadStatusEl.innerHTML = '✓ <a href="' + gambarUrlTersimpan + '" target="_blank" rel="noopener">Foto terupload</a>';
   })
   .catch(err => {
     uploadStatusEl.textContent = 'Upload gagal: ' + err.message + ' (coba lagi)';

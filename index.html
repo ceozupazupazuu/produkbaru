@@ -292,6 +292,12 @@
 
     <div class="section">
       <div class="field">
+        <input type="text" id="size" placeholder="Size">
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="field">
         <input type="file" id="gambarFile" accept="image/*" style="display:none;">
         <button type="button" class="upload-link" id="btnHubungDrive" style="border:none;cursor:pointer;">Hubungkan Google Drive →</button>
         <button type="button" class="upload-link" id="btnPilihGambar" style="border:none;cursor:pointer;display:none;">Pilih & upload gambar ke Drive →</button>
@@ -384,6 +390,7 @@
           <tr>
             <th>#</th>
             <th>Nama produk</th>
+            <th>Size</th>
             <th>Pabrik</th>
             <th>Collection</th>
             <th>Harga ritel</th>
@@ -586,6 +593,7 @@ function renderList(){
     <tr>
       <td>${i + 1}</td>
       <td>${p.nama}</td>
+      <td>${p.size || ''}</td>
       <td>${p.pabrik}</td>
       <td>${p.koleksi}</td>
       <td class="num">${formatIDR(p.ritel)}</td>
@@ -615,12 +623,12 @@ clearBtn.addEventListener('click', ()=>{
 downloadBtn.addEventListener('click', ()=>{
   if(products.length === 0) return;
 
-  const header = ['Nama produk', 'Pabrik', 'Collection', 'Harga beli (RMB)', 'Kurs RMB hari ini (IDR)', 'Pembagi margin', 'Harga pokok (IDR)', 'Ongkos kirim (IDR)', 'Harga ritel (IDR)', 'Stok', 'SKU penjual', 'Link gambar (Drive)'];
-  const rows = products.map(p => [p.nama, p.pabrik, p.koleksi, p.beli, p.kurs, p.margin, p.pokok, ONGKIR_FLAT, p.ritel, p.stok, p.sku, p.gambarUrl || '']);
+  const header = ['Nama produk', 'Size', 'Pabrik', 'Collection', 'Harga beli (RMB)', 'Kurs RMB hari ini (IDR)', 'Pembagi margin', 'Harga pokok (IDR)', 'Ongkos kirim (IDR)', 'Harga ritel (IDR)', 'Stok', 'SKU penjual', 'Link gambar (Drive)'];
+  const rows = products.map(p => [p.nama, p.size, p.pabrik, p.koleksi, p.beli, p.kurs, p.margin, p.pokok, ONGKIR_FLAT, p.ritel, p.stok, p.sku, p.gambarUrl || '']);
   const aoa = [header, ...rows];
 
   const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = [{ wch: 26 }, { wch: 10 }, { wch: 55 }, { wch: 14 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 10 }, { wch: 16 }, { wch: 45 }];
+  ws['!cols'] = [{ wch: 26 }, { wch: 12 }, { wch: 10 }, { wch: 55 }, { wch: 14 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 10 }, { wch: 16 }, { wch: 45 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Produk');
 
@@ -631,6 +639,8 @@ downloadBtn.addEventListener('click', ()=>{
 submitBtn.addEventListener('click', ()=>{
   const namaInput = document.getElementById('nama');
   const nama = namaInput.value.trim();
+  const sizeInput = document.getElementById('size');
+  const size = sizeInput.value.trim();
   const stokInput = document.getElementById('stok');
   const stok = stokInput.value;
   const pabrikInput = document.getElementById('pabrik');
@@ -686,7 +696,7 @@ submitBtn.addEventListener('click', ()=>{
   const stokVal = parseInt(stok, 10);
 
   products.push({
-    nama, pabrik, koleksi, beli, kurs: k, margin,
+    nama, size, pabrik, koleksi, beli, kurs: k, margin,
     pokok: Math.round(pokok), ritel: Math.round(ritel), stok: stokVal, sku,
     gambarUrl: gambarUrlTersimpan, gambarNama: gambarNamaTersimpan
   });
@@ -694,6 +704,7 @@ submitBtn.addEventListener('click', ()=>{
   const dl = document.getElementById('successDl');
   dl.innerHTML = `
     <div><dt>Nama produk</dt><dd>${nama}</dd></div>
+    <div><dt>Size</dt><dd>${size || '-'}</dd></div>
     <div><dt>Pabrik</dt><dd>${pabrik}</dd></div>
     <div><dt>Collection</dt><dd>${koleksi}</dd></div>
     <div><dt>Harga ritel</dt><dd>${hargaRitelEl.textContent}</dd></div>
@@ -706,6 +717,7 @@ submitBtn.addEventListener('click', ()=>{
   renderList();
 
   namaInput.value = '';
+  sizeInput.value = '';
   pabrikInput.value = '';
   koleksiInput.value = '';
   koleksiLainnyaInput.value = '';

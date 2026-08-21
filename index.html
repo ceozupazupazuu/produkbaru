@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Input Produk — Formulir Sourcing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root{
+    --paper:#F7F4EE;
+    --card:#FFFFFF;
+    --ink:#1C2430;
+    --ink-soft:#5B6472;
+    --line:#E4DFD3;
+    --line-strong:#D2CBB9;
+    --copper:#B8541F;
+    --copper-deep:#8F3F16;
+    --copper-tint:#F6E4D6;
+    --teal:#2E6B5E;
+    --teal-tint:#DFEDE8;
+    --danger:#B23A3A;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    padding:56px 20px 90px;
+  }
+  .wrap{ max-width:720px; margin:0 auto; }
+
+  .masthead{ margin-bottom:40px; }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--copper-deep); margin:0 0 10px;
+  }
+  h1{
+    font-family:'Fraunces',serif; font-weight:600; font-size:34px;
+    margin:0 0 8px; line-height:1.15; letter-spacing:-0.01em;
+  }
+  .masthead p{ margin:0; color:var(--ink-soft); font-size:15px; max-width:52ch; }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:32px 32px 8px;
+    margin-bottom:22px;
+  }
+  .section{ padding-bottom:28px; border-bottom:1px solid var(--line); margin-bottom:28px; }
+  .section:last-child{ border-bottom:none; margin-bottom:4px; padding-bottom:4px; }
+
+  .section-head{ display:flex; align-items:baseline; gap:10px; margin-bottom:16px; }
+  .tag{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600;
+    color:var(--teal); background:var(--teal-tint);
+    padding:3px 8px; border-radius:5px; letter-spacing:0.04em;
+  }
+  .section-head h2{
+    font-family:'Fraunces',serif; font-weight:600; font-size:19px; margin:0; color:var(--ink);
+  }
+
+  label{ display:block; font-size:13px; font-weight:500; color:var(--ink); margin-bottom:6px; }
+  .hint{ font-size:12.5px; color:var(--ink-soft); margin:6px 0 0; }
+  .hint a{ color:var(--copper-deep); font-weight:600; text-decoration:none; }
+  .hint a:hover{ text-decoration:underline; }
+
+  input[type="text"], input[type="number"], input[type="url"], select{
+    width:100%; font-family:'Inter',sans-serif; font-size:15px;
+    padding:11px 13px; border:1px solid var(--line-strong); border-radius:8px;
+    background:#FCFBF8; color:var(--ink); transition:border-color .15s, box-shadow .15s;
+  }
+  select{
+    appearance:none; -webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235B6472' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat:no-repeat; background-position:right 13px center;
+    padding-right:36px; cursor:pointer;
+  }
+  select:invalid{ color:var(--ink-soft); }
+  input:focus{
+    outline:none; border-color:var(--copper); background:#fff;
+    box-shadow:0 0 0 3px var(--copper-tint);
+  }
+  .field{ margin-bottom:18px; }
+  .field:last-child{ margin-bottom:0; }
+  .row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:560px){ .row{ grid-template-columns:1fr; } }
+
+  /* Margin choice */
+  .margin-choice{ display:flex; gap:10px; }
+  .margin-opt{ flex:1; position:relative; }
+  .margin-opt input{ position:absolute; opacity:0; inset:0; cursor:pointer; }
+  .margin-opt span{
+    display:block; text-align:center; padding:12px 8px; border:1.5px solid var(--line-strong);
+    border-radius:8px; font-size:14px; font-weight:600; color:var(--ink-soft);
+    background:#FCFBF8; transition:all .15s;
+  }
+  .margin-opt input:checked + span{
+    border-color:var(--copper); background:var(--copper-tint); color:var(--copper-deep);
+  }
+
+  /* Price tag / receipt */
+  .receipt{
+    background:#FCFBF8; border:1px solid var(--line); border-radius:10px;
+    padding:18px 20px; margin-top:20px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .receipt-row{
+    display:flex; justify-content:space-between; font-size:13px; color:var(--ink-soft);
+    padding:5px 0;
+  }
+  .receipt-row.total{
+    border-top:1.5px dashed var(--line-strong); margin-top:8px; padding-top:12px;
+    font-size:15px; color:var(--ink); font-weight:600;
+  }
+  .receipt-row.total .val{ color:var(--copper-deep); font-size:20px; }
+
+  /* SKU */
+  .sku-box{ display:flex; gap:10px; align-items:center; }
+  .sku-box input{
+    font-family:'IBM Plex Mono',monospace; font-weight:600; letter-spacing:0.03em;
+    color:var(--teal); background:var(--teal-tint); border:1px solid var(--line);
+  }
+  .btn-regen{
+    flex-shrink:0; border:1px solid var(--line-strong); background:#fff; color:var(--ink);
+    border-radius:8px; padding:11px 16px; font-size:13px; font-weight:500; cursor:pointer;
+    font-family:'Inter',sans-serif; transition:background .15s;
+  }
+  .btn-regen:hover{ background:var(--paper); }
+
+
+
+  .submit-row{ margin-top:26px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .btn-submit{
+    background:var(--copper); color:#fff; border:none; border-radius:9px;
+    padding:14px 26px; font-size:15px; font-weight:600; cursor:pointer;
+    font-family:'Inter',sans-serif; transition:background .15s;
+  }
+  .btn-submit:hover{ background:var(--copper-deep); }
+  .btn-submit:disabled{ background:var(--line-strong); cursor:not-allowed; }
+  .req-note{ font-size:12.5px; color:var(--ink-soft); }
+
+  .success{
+    display:none; margin-top:22px; border:1px solid var(--teal); background:var(--teal-tint);
+    border-radius:10px; padding:18px 20px;
+  }
+  .success.show{ display:block; }
+  .success h3{
+    font-family:'Fraunces',serif; font-size:16px; margin:0 0 10px; color:var(--teal);
+  }
+  .success dl{ margin:0; font-size:13.5px; color:var(--ink); }
+  .success dl div{ display:flex; justify-content:space-between; padding:4px 0; gap:12px; }
+  .success dl dt{ color:var(--ink-soft); flex-shrink:0; }
+  .success dl dd{ margin:0; font-weight:500; word-break:break-all; text-align:right; }
+
+  .err{ color:var(--danger); font-size:12.5px; margin-top:6px; display:none; }
+  .err.show{ display:block; }
+
+  /* Product list */
+  .list-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:8px; }
+  .list-head h2{ font-family:'Fraunces',serif; font-weight:600; font-size:19px; margin:0; }
+  .counter{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--ink-soft); }
+  .counter.full{ color:var(--danger); font-weight:600; }
+  .empty-note{ font-size:13.5px; color:var(--ink-soft); padding:18px 0; }
+  .list-table-wrap{ overflow-x:auto; }
+  table.list-table{ width:100%; border-collapse:collapse; font-size:13px; }
+  table.list-table th{
+    text-align:left; font-weight:500; color:var(--ink-soft); font-size:11.5px;
+    text-transform:uppercase; letter-spacing:0.05em; padding:8px 10px; border-bottom:1px solid var(--line-strong);
+    white-space:nowrap;
+  }
+  table.list-table td{ padding:9px 10px; border-bottom:1px solid var(--line); white-space:nowrap; max-width:220px; overflow:hidden; text-overflow:ellipsis; }
+  table.list-table td.num{ font-family:'IBM Plex Mono',monospace; }
+  table.list-table td.sku{ font-family:'IBM Plex Mono',monospace; color:var(--teal); }
+  table.list-table td a{ color:var(--copper-deep); font-weight:600; }
+  table.list-table button.row-del{
+    background:none; border:none; color:var(--danger); cursor:pointer; font-size:12.5px;
+    font-family:'Inter',sans-serif; font-weight:500; padding:0;
+  }
+  .list-actions{ margin-top:20px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .btn-download{
+    background:var(--teal); color:#fff; border:none; border-radius:9px;
+    padding:13px 22px; font-size:14.5px; font-weight:600; cursor:pointer;
+    font-family:'Inter',sans-serif; transition:background .15s;
+  }
+  .btn-download:hover{ background:#234f45; }
+  .btn-download:disabled{ background:var(--line-strong); cursor:not-allowed; }
+  .btn-clear{
+    background:none; border:1px solid var(--line-strong); color:var(--ink-soft);
+    border-radius:9px; padding:12px 18px; font-size:13.5px; cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .btn-clear:hover{ background:var(--paper); }
+
+  .upload-link{
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--teal-tint); color:var(--teal); border:1px solid var(--line);
+    border-radius:8px; padding:12px 18px; font-size:14px; font-weight:600;
+    text-decoration:none; transition:background .15s;
+  }
+  .upload-link:hover{ background:#d3e6df; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <p class="eyebrow">Formulir sourcing produk</p>
+    <h1>Input produk baru</h1>
+    <p>Isi data produk untuk kalkulasi harga ritel otomatis, lalu tambahkan ke daftar sebelum mengunduh semuanya sebagai satu file Excel — sampai 1.000 produk.</p>
+  </div>
+
+  <div class="card">
+
+    <div class="section">
+      <div class="field">
+        <select id="pabrik">
+          <option value="">Pilih pabrik</option>
+          <option value="JD">JD</option>
+          <option value="JY">JY</option>
+          <option value="LY">LY</option>
+          <option value="HUZ">HUZ</option>
+          <option value="AD">AD</option>
+          <option value="GE">GE</option>
+          <option value="MG">MG</option>
+          <option value="LI">LI</option>
+          <option value="MOUS">MOUS</option>
+          <option value="ZH">ZH</option>
+          <option value="XN">XN</option>
+          <option value="XG">XG</option>
+          <option value="QI">QI</option>
+          <option value="CR">CR</option>
+          <option value="XI">XI</option>
+          <option value="HU">HU</option>
+          <option value="MOS">MOS</option>
+        </select>
+        <p class="err" id="err-pabrik">Pabrik wajib dipilih.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="field">
+        <select id="koleksi">
+          <option value="">Pilih collection</option>
+          <option value="Jade Bracelet Copper Silver925 Zupazupazuu - Variasi Banyak">Jade Bracelet Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Jade Ring Copper Silver925 Zupazupazuu - Variasi Banyak">Jade Ring Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Jade Necklace Copper Silver925 Zupazupazuu - Variasi Banyak">Jade Necklace Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Chalcedony Bracelet Copper Silver925 Zupazupazuu - Variasi Banyak">Chalcedony Bracelet Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Chalcedony Ring Copper Silver925 Zupazupazuu - Variasi Banyak">Chalcedony Ring Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Chalcedony Necklace Copper Silver925 Zupazupazuu - Variasi Banyak">Chalcedony Necklace Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Crystal Ring Copper Silver925 Zupazupazuu - Variasi Satuan">Crystal Ring Copper Silver925 Zupazupazuu - Variasi Satuan</option>
+          <option value="Crystal Bracelet Copper Silver925 Zupazupazuu - Variasi Satuan">Crystal Bracelet Copper Silver925 Zupazupazuu - Variasi Satuan</option>
+          <option value="Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Satuan">Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Satuan</option>
+          <option value="Crystal Earrings Copper Silver925 Zupazupazuu - Variasi Satuan">Crystal Earrings Copper Silver925 Zupazupazuu - Variasi Satuan</option>
+          <option value="Shell Necklace Copper Silver925 Zupazupazuu - Variasi Banyak">Shell Necklace Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Flower Necklace Copper Silver925 Zupazupazuu - Variasi Banyak">Flower Necklace Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Raw Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak">Raw Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Oval Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak">Oval Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Butterfly Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak">Butterfly Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Cloud Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak">Cloud Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Square Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak">Square Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Mini Love Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak">Mini Love Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Tear Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak">Tear Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Four-Leaf Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak">Four-Leaf Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Amethyst Crystal Charm - Variasi Banyak">Amethyst Crystal Charm - Variasi Banyak</option>
+          <option value="Star Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak">Star Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Moon Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak">Moon Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Pear Shaped Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak">Pear Shaped Crystal Necklace Copper Silver925 Zupazupazuu - Variasi Banyak</option>
+          <option value="Bangle 10mm - Variasi Banyak">Bangle 10mm - Variasi Banyak</option>
+          <option value="Thin Crystal Ring - Variasi Banyak">Thin Crystal Ring - Variasi Banyak</option>
+          <option value="PRIVElege Crystal Bracelet Gelang Collection Campur Lelang">PRIVElege Crystal Bracelet Gelang Collection Campur Lelang</option>
+          <option value="PRIVElege Crystal Ring Cincin Collection Campur Lelang">PRIVElege Crystal Ring Cincin Collection Campur Lelang</option>
+          <option value="__lainnya__">Lainnya (isi sendiri)</option>
+        </select>
+        <input type="text" id="koleksiLainnya" placeholder="Tulis nama collection" style="display:none; margin-top:10px;">
+        <p class="err" id="err-koleksi">Collection wajib dipilih.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="field">
+        <input type="text" id="nama" placeholder="Nama produk">
+        <p class="err" id="err-nama">Nama produk wajib diisi.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><span class="tag">visual</span><h2>Gambar utama</h2></div>
+      <div class="field">
+        <input type="file" id="gambarFile" accept="image/*" style="display:none;">
+        <button type="button" class="upload-link" id="btnPilihGambar" style="border:none;cursor:pointer;">Pilih & upload gambar ke Drive →</button>
+        <p class="hint" id="uploadStatus"></p>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><span class="tag">harga</span><h2>Harga ritel (mata uang lokal)</h2></div>
+
+      <div class="row">
+        <div class="field">
+          <label for="hargaBeli">Harga beli (RMB)</label>
+          <input type="number" id="hargaBeli" placeholder="0" min="0" step="0.01">
+        </div>
+        <div class="field">
+          <label for="kurs">Kurs RMB hari ini (IDR)</label>
+          <input type="number" id="kurs" placeholder="Isi kurs hari ini" min="0" step="1">
+          <p class="hint">Cek kurs terbaru sebelum mengisi.</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Pembagi margin</label>
+        <div class="margin-choice">
+          <label class="margin-opt">
+            <input type="radio" name="margin" value="0.1">
+            <span>÷ 0,1</span>
+          </label>
+          <label class="margin-opt">
+            <input type="radio" name="margin" value="0.2" checked>
+            <span>÷ 0,2</span>
+          </label>
+          <label class="margin-opt">
+            <input type="radio" name="margin" value="0.3">
+            <span>÷ 0,3</span>
+          </label>
+        </div>
+        <p class="hint">Harga ritel = (harga beli × kurs) ÷ pembagi yang dipilih.</p>
+      </div>
+
+      <div class="receipt">
+        <div class="receipt-row"><span>Harga beli × kurs</span><span id="hargaPokok">Rp 0</span></div>
+        <div class="receipt-row"><span id="marginLabel">Dibagi 0,2</span><span id="marginNilai">—</span></div>
+        <div class="receipt-row"><span>Ongkos kirim (flat)</span><span>Rp 3.000</span></div>
+        <div class="receipt-row total"><span>Harga ritel</span><span class="val" id="hargaRitel">Rp 0</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><span class="tag">stok</span><h2>Jumlah stok</h2></div>
+      <div class="field">
+        <label for="stok">Stok (unit)</label>
+        <input type="number" id="stok" placeholder="0" min="0" step="1">
+        <p class="err" id="err-stok">Jumlah stok wajib diisi.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><span class="tag">sku</span><h2>SKU penjual</h2></div>
+      <div class="field">
+        <label for="sku">SKU (dibuat otomatis)</label>
+        <div class="sku-box">
+          <input type="text" id="sku" readonly>
+          <button type="button" class="btn-regen" id="regenSku">Buat ulang</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="submit-row">
+      <button type="button" class="btn-submit" id="submitBtn">Tambahkan ke daftar</button>
+      <span class="req-note" id="counterNote">0 / 1000 produk</span>
+    </div>
+
+    <div class="success" id="successBox">
+      <h3>Ditambahkan ke daftar</h3>
+      <dl id="successDl"></dl>
+    </div>
+
+  </div>
+
+  <div class="card">
+    <div class="list-head">
+      <h2>Daftar produk</h2>
+      <span class="counter" id="listCounter">0 / 1000</span>
+    </div>
+
+    <p class="empty-note" id="emptyNote">Belum ada produk yang ditambahkan. Isi formulir di atas, lalu klik "Tambahkan ke daftar".</p>
+
+    <div class="list-table-wrap" id="tableWrap" style="display:none;">
+      <table class="list-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nama produk</th>
+            <th>Pabrik</th>
+            <th>Collection</th>
+            <th>Harga ritel</th>
+            <th>Stok</th>
+            <th>SKU</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="listBody"></tbody>
+      </table>
+    </div>
+
+    <div class="list-actions">
+      <button type="button" class="btn-download" id="downloadBtn" disabled>Unduh semua sebagai Excel</button>
+      <button type="button" class="btn-clear" id="clearBtn" style="display:none;">Kosongkan daftar</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ===== Upload gambar ke Google Drive =====
+const DRIVE_CLIENT_ID = '920590130909-a0isao1q2fnm23l5il6m2flm53oh7r5h.apps.googleusercontent.com';
+const DRIVE_FOLDER_ID = '1GhSCCN7q7CAwZ2IYYdrOwEc5HFcy-_gi';
+
+let driveAccessToken = null;
+let gambarUrlTersimpan = '';
+let gambarNamaTersimpan = '';
+let tokenClient = null;
+
+const gambarFileInput = document.getElementById('gambarFile');
+const btnPilihGambar = document.getElementById('btnPilihGambar');
+const uploadStatusEl = document.getElementById('uploadStatus');
+
+function getTokenClient(){
+  if(typeof google === 'undefined' || !google.accounts){
+    uploadStatusEl.textContent = 'Library Google belum siap, coba lagi sebentar lagi.';
+    return null;
+  }
+  if(!tokenClient){
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: DRIVE_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/drive.file',
+      callback: (resp) => {
+        if(resp.error){
+          uploadStatusEl.textContent = 'Gagal login Google: ' + resp.error;
+          return;
+        }
+        driveAccessToken = resp.access_token;
+        lakukanUpload();
+      }
+    });
+  }
+  return tokenClient;
+}
+
+btnPilihGambar.addEventListener('click', () => gambarFileInput.click());
+
+gambarFileInput.addEventListener('change', () => {
+  if(!gambarFileInput.files.length) return;
+  if(driveAccessToken){
+    lakukanUpload();
+  } else {
+    const client = getTokenClient();
+    if(client) client.requestAccessToken();
+  }
+});
+
+function lakukanUpload(){
+  const file = gambarFileInput.files[0];
+  if(!file) return;
+
+  uploadStatusEl.textContent = 'Mengupload "' + file.name + '"...';
+  btnPilihGambar.disabled = true;
+
+  const metadata = { name: file.name, parents: [DRIVE_FOLDER_ID] };
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+  form.append('file', file);
+
+  fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + driveAccessToken },
+    body: form
+  })
+  .then(r => {
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  })
+  .then(data => {
+    gambarUrlTersimpan = data.webViewLink || ('https://drive.google.com/file/d/' + data.id + '/view');
+    gambarNamaTersimpan = file.name;
+    uploadStatusEl.innerHTML = 'Terupload: <a href="' + gambarUrlTersimpan + '" target="_blank" rel="noopener">' + file.name + '</a>';
+  })
+  .catch(err => {
+    uploadStatusEl.textContent = 'Upload gagal: ' + err.message + ' (coba lagi)';
+  })
+  .finally(() => {
+    btnPilihGambar.disabled = false;
+  });
+}
+
+function formatIDR(n){
+  if(!isFinite(n)) n = 0;
+  return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+}
+
+function generateSKU(){
+  let digits = '';
+  for(let i=0;i<6;i++) digits += Math.floor(Math.random()*10);
+  return 'ZPZP' + digits;
+}
+
+const skuInput = document.getElementById('sku');
+skuInput.value = generateSKU();
+document.getElementById('regenSku').addEventListener('click', ()=>{
+  skuInput.value = generateSKU();
+});
+
+const hargaBeli = document.getElementById('hargaBeli');
+const kurs = document.getElementById('kurs');
+const marginRadios = document.querySelectorAll('input[name="margin"]');
+const hargaPokokEl = document.getElementById('hargaPokok');
+const marginLabelEl = document.getElementById('marginLabel');
+const marginNilaiEl = document.getElementById('marginNilai');
+const hargaRitelEl = document.getElementById('hargaRitel');
+
+const ONGKIR_FLAT = 3000;
+
+function hitungHarga(){
+  const beli = parseFloat(hargaBeli.value) || 0;
+  const k = parseFloat(kurs.value) || 0;
+  let margin = 0.2;
+  marginRadios.forEach(r => { if(r.checked) margin = parseFloat(r.value); });
+
+  const pokok = beli * k;
+  const ritel = (margin > 0 ? pokok / margin : 0) + ONGKIR_FLAT;
+
+  hargaPokokEl.textContent = formatIDR(pokok);
+  marginLabelEl.textContent = 'Dibagi ' + margin.toString().replace('.', ',');
+  marginNilaiEl.textContent = '÷ ' + margin.toString().replace('.', ',');
+  hargaRitelEl.textContent = formatIDR(ritel);
+}
+
+[hargaBeli, kurs].forEach(el => el.addEventListener('input', hitungHarga));
+marginRadios.forEach(r => r.addEventListener('change', hitungHarga));
+hitungHarga();
+
+const koleksiSelEl = document.getElementById('koleksi');
+const koleksiLainnyaEl = document.getElementById('koleksiLainnya');
+koleksiSelEl.addEventListener('change', ()=>{
+  koleksiLainnyaEl.style.display = koleksiSelEl.value === '__lainnya__' ? 'block' : 'none';
+  if(koleksiSelEl.value !== '__lainnya__') koleksiLainnyaEl.value = '';
+});
+
+const MAX_PRODUCTS = 1000;
+let products = [];
+
+const counterNote = document.getElementById('counterNote');
+const listCounter = document.getElementById('listCounter');
+const emptyNote = document.getElementById('emptyNote');
+const tableWrap = document.getElementById('tableWrap');
+const listBody = document.getElementById('listBody');
+const downloadBtn = document.getElementById('downloadBtn');
+const clearBtn = document.getElementById('clearBtn');
+const submitBtn = document.getElementById('submitBtn');
+
+function renderList(){
+  const n = products.length;
+  counterNote.textContent = n + ' / ' + MAX_PRODUCTS + ' produk';
+  listCounter.textContent = n + ' / ' + MAX_PRODUCTS;
+  listCounter.classList.toggle('full', n >= MAX_PRODUCTS);
+
+  if(n === 0){
+    emptyNote.style.display = 'block';
+    tableWrap.style.display = 'none';
+    clearBtn.style.display = 'none';
+    downloadBtn.disabled = true;
+    listBody.innerHTML = '';
+    submitBtn.disabled = false;
+    return;
+  }
+
+  emptyNote.style.display = 'none';
+  tableWrap.style.display = 'block';
+  clearBtn.style.display = 'inline-block';
+  downloadBtn.disabled = false;
+
+  listBody.innerHTML = products.map((p, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${p.nama}</td>
+      <td>${p.pabrik}</td>
+      <td>${p.koleksi}</td>
+      <td class="num">${formatIDR(p.ritel)}</td>
+      <td class="num">${p.stok}</td>
+      <td class="sku">${p.sku}</td>
+      <td><button type="button" class="row-del" data-i="${i}">Hapus</button></td>
+    </tr>
+  `).join('');
+
+  submitBtn.disabled = n >= MAX_PRODUCTS;
+}
+
+listBody.addEventListener('click', e => {
+  const btn = e.target.closest('.row-del');
+  if(!btn) return;
+  const i = parseInt(btn.dataset.i, 10);
+  products.splice(i, 1);
+  renderList();
+});
+
+clearBtn.addEventListener('click', ()=>{
+  if(!confirm('Kosongkan seluruh daftar produk?')) return;
+  products = [];
+  renderList();
+});
+
+downloadBtn.addEventListener('click', ()=>{
+  if(products.length === 0) return;
+
+  const header = ['Nama produk', 'Pabrik', 'Collection', 'Harga beli (RMB)', 'Kurs RMB hari ini (IDR)', 'Pembagi margin', 'Harga pokok (IDR)', 'Ongkos kirim (IDR)', 'Harga ritel (IDR)', 'Stok', 'SKU penjual', 'Link gambar (Drive)'];
+  const rows = products.map(p => [p.nama, p.pabrik, p.koleksi, p.beli, p.kurs, p.margin, p.pokok, ONGKIR_FLAT, p.ritel, p.stok, p.sku, p.gambarUrl || '']);
+  const aoa = [header, ...rows];
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{ wch: 26 }, { wch: 10 }, { wch: 55 }, { wch: 14 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 10 }, { wch: 16 }, { wch: 45 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Produk');
+
+  const tanggal = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `daftar_produk_${tanggal}.xlsx`);
+});
+
+submitBtn.addEventListener('click', ()=>{
+  const namaInput = document.getElementById('nama');
+  const nama = namaInput.value.trim();
+  const stokInput = document.getElementById('stok');
+  const stok = stokInput.value;
+  const pabrikInput = document.getElementById('pabrik');
+  const pabrik = pabrikInput.value;
+  const koleksiInput = document.getElementById('koleksi');
+  const koleksiLainnyaInput = document.getElementById('koleksiLainnya');
+  const koleksiRaw = koleksiInput.value;
+  const koleksi = koleksiRaw === '__lainnya__' ? koleksiLainnyaInput.value.trim() : koleksiRaw;
+  let valid = true;
+
+  if(products.length >= MAX_PRODUCTS){
+    alert('Daftar sudah mencapai batas 1.000 produk. Unduh atau kosongkan daftar dulu sebelum menambah lagi.');
+    return;
+  }
+
+  if(!nama){
+    document.getElementById('err-nama').classList.add('show');
+    valid = false;
+  } else {
+    document.getElementById('err-nama').classList.remove('show');
+  }
+
+  if(!pabrik){
+    document.getElementById('err-pabrik').classList.add('show');
+    valid = false;
+  } else {
+    document.getElementById('err-pabrik').classList.remove('show');
+  }
+
+  if(!koleksi){
+    document.getElementById('err-koleksi').classList.add('show');
+    valid = false;
+  } else {
+    document.getElementById('err-koleksi').classList.remove('show');
+  }
+
+  if(stok === '' || parseInt(stok, 10) < 0){
+    document.getElementById('err-stok').classList.add('show');
+    valid = false;
+  } else {
+    document.getElementById('err-stok').classList.remove('show');
+  }
+
+  if(!valid) return;
+
+  const beli = parseFloat(hargaBeli.value) || 0;
+  const k = parseFloat(kurs.value) || 0;
+  let margin = 0.2;
+  marginRadios.forEach(r => { if(r.checked) margin = parseFloat(r.value); });
+  const pokok = beli * k;
+  const ritel = (margin > 0 ? pokok / margin : 0) + ONGKIR_FLAT;
+  const sku = skuInput.value;
+  const stokVal = parseInt(stok, 10);
+
+  products.push({
+    nama, pabrik, koleksi, beli, kurs: k, margin,
+    pokok: Math.round(pokok), ritel: Math.round(ritel), stok: stokVal, sku,
+    gambarUrl: gambarUrlTersimpan, gambarNama: gambarNamaTersimpan
+  });
+
+  const dl = document.getElementById('successDl');
+  dl.innerHTML = `
+    <div><dt>Nama produk</dt><dd>${nama}</dd></div>
+    <div><dt>Pabrik</dt><dd>${pabrik}</dd></div>
+    <div><dt>Collection</dt><dd>${koleksi}</dd></div>
+    <div><dt>Harga ritel</dt><dd>${hargaRitelEl.textContent}</dd></div>
+    <div><dt>Stok</dt><dd>${stokVal}</dd></div>
+    <div><dt>SKU penjual</dt><dd>${sku}</dd></div>
+    <div><dt>Gambar</dt><dd>${gambarUrlTersimpan ? '<a href="'+gambarUrlTersimpan+'" target="_blank" rel="noopener">'+gambarNamaTersimpan+'</a>' : 'Tidak ada'}</dd></div>
+  `;
+  document.getElementById('successBox').classList.add('show');
+
+  renderList();
+
+  namaInput.value = '';
+  pabrikInput.value = '';
+  koleksiInput.value = '';
+  koleksiLainnyaInput.value = '';
+  koleksiLainnyaInput.style.display = 'none';
+  hargaBeli.value = '';
+  kurs.value = '';
+  stokInput.value = '';
+  skuInput.value = generateSKU();
+  gambarFileInput.value = '';
+  gambarUrlTersimpan = '';
+  gambarNamaTersimpan = '';
+  uploadStatusEl.textContent = '';
+});
+
+renderList();
+</script>
+</body>
+</html>

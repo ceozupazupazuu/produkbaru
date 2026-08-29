@@ -134,8 +134,6 @@
   }
   .btn-regen:hover{ background:var(--paper); }
 
-
-
   .submit-row{ margin-top:26px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
   .btn-submit{
     background:var(--copper); color:#fff; border:none; border-radius:9px;
@@ -161,6 +159,10 @@
 
   .err{ color:var(--danger); font-size:12.5px; margin-top:6px; display:none; }
   .err.show{ display:block; }
+
+  /* Drive status banner variants */
+  .hint.warn{ color:var(--danger); font-weight:600; }
+  .hint.ok{ color:var(--teal); font-weight:600; }
 
   /* Product list */
   .list-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:8px; }
@@ -205,6 +207,18 @@
     text-decoration:none; transition:background .15s;
   }
   .upload-link:hover{ background:#d3e6df; }
+  .upload-link:disabled{ opacity:.55; cursor:not-allowed; }
+
+  /* Consent box for sharing folder access */
+  .share-consent{
+    margin-top:10px; padding:12px 14px; border:1px solid var(--line-strong);
+    border-radius:8px; background:#FCFBF8; font-size:13px; color:var(--ink-soft);
+    display:none;
+  }
+  .share-consent.show{ display:block; }
+  .share-consent label{ display:flex; align-items:flex-start; gap:8px; font-weight:400; font-size:13px; margin:0; cursor:pointer; }
+  .share-consent input[type="checkbox"]{ margin-top:2px; flex-shrink:0; }
+  .share-consent .emails{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink); }
 </style>
 </head>
 <body>
@@ -301,6 +315,17 @@
         <input type="file" id="gambarFile" accept="image/*" style="display:none;">
         <button type="button" class="upload-link" id="btnHubungDrive" style="border:none;cursor:pointer;">Hubungkan Google Drive →</button>
         <button type="button" class="upload-link" id="btnPilihGambar" style="border:none;cursor:pointer;display:none;">Pilih & upload gambar ke Drive →</button>
+
+        <!-- Consent shown BEFORE sharing the Drive folder with the team emails. No longer silent. -->
+        <div class="share-consent" id="shareConsentBox">
+          <label>
+            <input type="checkbox" id="shareConsentCheckbox">
+            <span>Beri akses folder Drive ini ke email tim berikut sebelum upload:
+              <br><span class="emails" id="shareEmailsList"></span>
+            </span>
+          </label>
+        </div>
+
         <p class="hint" id="uploadStatus"></p>
       </div>
     </div>
@@ -417,7 +442,8 @@
 const DRIVE_CLIENT_ID = '920590130909-a0isao1q2fnm23l5il6m2flm53oh7r5h.apps.googleusercontent.com';
 const DRIVE_FOLDER_ID = '1GhSCCN7q7CAwZ2IYYdrOwEc5HFcy-_gi';
 
-// Email yang otomatis diberi akses (editor) ke folder Drive di atas.
+// Email yang akan diberi akses (editor) ke folder Drive di atas — SEKARANG butuh persetujuan eksplisit (checkbox),
+// tidak lagi otomatis/silent seperti sebelumnya.
 const DRIVE_SHARE_EMAILS = [
   'ariniaf.office@gmail.com',
   'Zupazudiamond@gmail.com'
@@ -433,38 +459,92 @@ const gambarFileInput = document.getElementById('gambarFile');
 const btnHubungDrive = document.getElementById('btnHubungDrive');
 const btnPilihGambar = document.getElementById('btnPilihGambar');
 const uploadStatusEl = document.getElementById('uploadStatus');
+const shareConsentBox = document.getElementById('shareConsentBox');
+const shareConsentCheckbox = document.getElementById('shareConsentCheckbox');
+const shareEmailsList = document.getElementById('shareEmailsList');
+shareEmailsList.textContent = DRIVE_SHARE_EMAILS.join(', ');
+
+function setUploadStatus(msg, kind){
+  uploadStatusEl.textContent = msg;
+  uploadStatusEl.classList.remove('warn', 'ok');
+  if(kind) uploadStatusEl.classList.add(kind);
+}
+
+// Waits briefly for the Google Identity Services script to finish loading (it's async/defer,
+// so it may not be ready the instant the button is clicked, especially on slow connections).
+function waitForGoogleLib(timeoutMs = 6000){
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    (function poll(){
+      if(typeof google !== 'undefined' && google.accounts && google.accounts.oauth2){
+        resolve();
+      } else if(Date.now() - start > timeoutMs){
+        reject(new Error('lib-timeout'));
+      } else {
+        setTimeout(poll, 150);
+      }
+    })();
+  });
+}
 
 function getTokenClient(){
-  if(typeof google === 'undefined' || !google.accounts){
-    uploadStatusEl.textContent = 'Library Google belum siap, coba lagi sebentar lagi.';
-    return null;
-  }
   if(!tokenClient){
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: DRIVE_CLIENT_ID,
       scope: 'https://www.googleapis.com/auth/drive.file',
       callback: (resp) => {
+        btnHubungDrive.disabled = false;
         if(resp.error){
-          uploadStatusEl.textContent = 'Gagal login Google: ' + resp.error;
+          // Common cause here is a misconfigured OAuth client (e.g. this page's origin isn't
+          // registered in Google Cloud Console for this Client ID) or the user closing the popup.
+          if(resp.error === 'popup_closed' || resp.error === 'access_denied'){
+            setUploadStatus('Login Google dibatalkan. Klik "Hubungkan Google Drive" untuk coba lagi.', 'warn');
+          } else {
+            setUploadStatus('Gagal login Google (' + resp.error + '). Jika ini terus terjadi, origin situs ini kemungkinan belum terdaftar di Google Cloud Console untuk Client ID yang digunakan.', 'warn');
+          }
           return;
         }
         driveAccessToken = resp.access_token;
         btnHubungDrive.style.display = 'none';
         btnPilihGambar.style.display = 'inline-flex';
-        uploadStatusEl.textContent = 'Terhubung ke Google Drive. Menyiapkan akses folder...';
-        bagikanFolderKeTim();
+        shareConsentBox.classList.add('show');
+        setUploadStatus('Terhubung ke Google Drive. Centang kotak di atas jika ingin memberi akses folder ke tim, lalu pilih gambar.', 'ok');
       }
     });
   }
   return tokenClient;
 }
 
-// Memberi akses folder Drive ke email tim (dipanggil sekali per sesi setelah login).
-function bagikanFolderKeTim(){
-  if(folderShared || !driveAccessToken){
-    uploadStatusEl.textContent = 'Terhubung ke Google Drive. Silakan pilih gambar.';
-    return;
+btnHubungDrive.addEventListener('click', async () => {
+  setUploadStatus('Menghubungkan ke Google...', null);
+  btnHubungDrive.disabled = true;
+  try{
+    await waitForGoogleLib();
+    const client = getTokenClient();
+    client.requestAccessToken();
+  } catch(e){
+    btnHubungDrive.disabled = false;
+    setUploadStatus('Library Google belum siap (koneksi lambat atau diblokir). Muat ulang halaman dan coba lagi.', 'warn');
   }
+});
+
+btnPilihGambar.addEventListener('click', () => {
+  // Only actually share the folder if the user has explicitly ticked the consent box.
+  if(shareConsentCheckbox.checked && !folderShared){
+    bagikanFolderKeTim();
+  }
+  gambarFileInput.click();
+});
+
+gambarFileInput.addEventListener('change', () => {
+  if(!gambarFileInput.files.length) return;
+  lakukanUpload();
+});
+
+// Memberi akses folder Drive ke email tim — sekarang hanya dipanggil setelah user mencentang
+// kotak persetujuan (lihat listener btnPilihGambar di atas), bukan otomatis lagi.
+function bagikanFolderKeTim(){
+  if(folderShared || !driveAccessToken) return;
 
   const permintaan = DRIVE_SHARE_EMAILS.map(email =>
     fetch(`https://www.googleapis.com/drive/v3/files/${DRIVE_FOLDER_ID}/permissions?sendNotificationEmail=false`, {
@@ -482,30 +562,18 @@ function bagikanFolderKeTim(){
     folderShared = true;
     const gagal = hasil.filter(h => !h.ok).map(h => h.email);
     if(gagal.length){
-      uploadStatusEl.textContent = 'Terhubung. Gagal memberi akses ke: ' + gagal.join(', ') + '. Silakan pilih gambar.';
+      setUploadStatus('Terhubung. Gagal memberi akses ke: ' + gagal.join(', ') + '. Silakan pilih gambar.', 'warn');
     } else {
-      uploadStatusEl.textContent = 'Terhubung ke Google Drive. Akses folder sudah diberikan ke tim. Silakan pilih gambar.';
+      setUploadStatus('Terhubung ke Google Drive. Akses folder sudah diberikan ke tim. Silakan pilih gambar.', 'ok');
     }
   });
 }
-
-btnHubungDrive.addEventListener('click', () => {
-  const client = getTokenClient();
-  if(client) client.requestAccessToken();
-});
-
-btnPilihGambar.addEventListener('click', () => gambarFileInput.click());
-
-gambarFileInput.addEventListener('change', () => {
-  if(!gambarFileInput.files.length) return;
-  lakukanUpload();
-});
 
 function lakukanUpload(){
   const file = gambarFileInput.files[0];
   if(!file) return;
 
-  uploadStatusEl.textContent = 'Mengupload "' + file.name + '"...';
+  setUploadStatus('Mengupload "' + file.name + '"...', null);
   btnPilihGambar.disabled = true;
 
   const metadata = { name: file.name, parents: [DRIVE_FOLDER_ID] };
@@ -521,8 +589,10 @@ function lakukanUpload(){
   .then(r => {
     if(r.status === 401){
       driveAccessToken = null;
+      folderShared = false;
       btnPilihGambar.style.display = 'none';
       btnHubungDrive.style.display = 'inline-flex';
+      shareConsentBox.classList.remove('show');
       throw new Error('Sesi Drive habis, klik "Hubungkan Google Drive" lagi');
     }
     if(!r.ok) throw new Error('HTTP ' + r.status);
@@ -532,9 +602,10 @@ function lakukanUpload(){
     gambarUrlTersimpan = data.webViewLink || ('https://drive.google.com/file/d/' + data.id + '/view');
     gambarNamaTersimpan = file.name;
     uploadStatusEl.innerHTML = '✓ <a href="' + gambarUrlTersimpan + '" target="_blank" rel="noopener">Foto terupload</a>';
+    uploadStatusEl.classList.remove('warn', 'ok');
   })
   .catch(err => {
-    uploadStatusEl.textContent = 'Upload gagal: ' + err.message + ' (coba lagi)';
+    setUploadStatus('Upload gagal: ' + err.message + ' (coba lagi)', 'warn');
   })
   .finally(() => {
     btnPilihGambar.disabled = false;
@@ -606,6 +677,17 @@ const downloadBtn = document.getElementById('downloadBtn');
 const clearBtn = document.getElementById('clearBtn');
 const submitBtn = document.getElementById('submitBtn');
 
+// Basic HTML-escaping for values that get inserted into the table via innerHTML,
+// so a product name like "<b>x</b>" or "O'Brien & Co." can't break the markup.
+function escapeHtml(str){
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function renderList(){
   const n = products.length;
   counterNote.textContent = n + ' / ' + MAX_PRODUCTS + ' produk';
@@ -630,13 +712,13 @@ function renderList(){
   listBody.innerHTML = products.map((p, i) => `
     <tr>
       <td>${i + 1}</td>
-      <td>${p.nama}</td>
-      <td>${p.size || ''}</td>
-      <td>${p.pabrik}</td>
-      <td>${p.koleksi}</td>
+      <td>${escapeHtml(p.nama)}</td>
+      <td>${escapeHtml(p.size || '')}</td>
+      <td>${escapeHtml(p.pabrik)}</td>
+      <td>${escapeHtml(p.koleksi)}</td>
       <td class="num">${formatIDR(p.ritel)}</td>
       <td class="num">${p.stok}</td>
-      <td class="sku">${p.sku}</td>
+      <td class="sku">${escapeHtml(p.sku)}</td>
       <td><button type="button" class="row-del" data-i="${i}">Hapus</button></td>
     </tr>
   `).join('');
@@ -741,14 +823,14 @@ submitBtn.addEventListener('click', ()=>{
 
   const dl = document.getElementById('successDl');
   dl.innerHTML = `
-    <div><dt>Nama produk</dt><dd>${nama}</dd></div>
-    <div><dt>Size</dt><dd>${size || '-'}</dd></div>
-    <div><dt>Pabrik</dt><dd>${pabrik}</dd></div>
-    <div><dt>Collection</dt><dd>${koleksi}</dd></div>
+    <div><dt>Nama produk</dt><dd>${escapeHtml(nama)}</dd></div>
+    <div><dt>Size</dt><dd>${escapeHtml(size || '-')}</dd></div>
+    <div><dt>Pabrik</dt><dd>${escapeHtml(pabrik)}</dd></div>
+    <div><dt>Collection</dt><dd>${escapeHtml(koleksi)}</dd></div>
     <div><dt>Harga ritel</dt><dd>${hargaRitelEl.textContent}</dd></div>
     <div><dt>Stok</dt><dd>${stokVal}</dd></div>
-    <div><dt>SKU penjual</dt><dd>${sku}</dd></div>
-    <div><dt>Gambar</dt><dd>${gambarUrlTersimpan ? '<a href="'+gambarUrlTersimpan+'" target="_blank" rel="noopener">'+gambarNamaTersimpan+'</a>' : 'Tidak ada'}</dd></div>
+    <div><dt>SKU penjual</dt><dd>${escapeHtml(sku)}</dd></div>
+    <div><dt>Gambar</dt><dd>${gambarUrlTersimpan ? '<a href="'+gambarUrlTersimpan+'" target="_blank" rel="noopener">'+escapeHtml(gambarNamaTersimpan)+'</a>' : 'Tidak ada'}</dd></div>
   `;
   document.getElementById('successBox').classList.add('show');
 
@@ -767,7 +849,6 @@ submitBtn.addEventListener('click', ()=>{
   gambarFileInput.value = '';
   gambarUrlTersimpan = '';
   gambarNamaTersimpan = '';
-  uploadStatusEl.textContent = driveAccessToken ? '' : '';
 });
 
 renderList();
